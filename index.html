@@ -1,6 +1,263 @@
-<html>
-<head></head>
-<body>
-123
-</body>
+<!DOCTYPE html>
+<html lang="ru">
+	<head>
+		<meta charset="utf-8">
+		<title>Karataev Oleg, M33041</title>
+		<link rel="stylesheet" href="./style/style.css" />
+	</head>
+	<body>
+		<div id="page_container">
+			<header id="header">
+				<div class="header_top">
+					<label for="showinfo" class="logo"></label>
+					<input type="checkbox" name="showinfo" id="showinfo" />
+					<div class="info">
+						<h1 class="info_name">Karataev Oleg</h1>
+						<h2 class="info_group">M33041 Student</h2>
+					</div>
+				</div>
+				<nav class="menu">
+					<a class="link" href="#header">Main</a> &bullet;
+					<a class="link" href="#code">Code</a> &bullet;
+					<a class="link" href="#animal">Animal</a> &bullet;
+					<a class="link" href="#facts">Facts</a> &bullet;
+					<a class="link" href="#contacts">Contacts</a>
+				</nav>
+			</header>
+			<main id="main">
+				<section class="sect">
+					<label for="showcontent_code"><h3 id="code" class="sect_title">Code Example</h3></label>
+					<input type="checkbox" name="showcontent_code" id="showcontent_code" class="visibility_switcher" checked />
+					<div class="sect_content code">
+						<code id="code_view">/*	Algorithm for finding (sub)palindromes in phrase
+	Note: if there are spaces, they will be ignored
+	and the string will be treated as if they weren't there.
+	Also, all duplicates will not be included in result.
+	
+	Manacher's Algorithm used here.
+*/
+
+mb_internal_encoding("UTF-8"); // UTF-8 support
+	
+class Palindrome {
+	
+	public $subpalindromes;
+	public $success;
+	public $fail;
+	
+	function __construct() {
+		$this->subpalindromes = function ($phrase) {
+			$phrase = mb_strtolower($phrase); // mb_* functions used to support UTF-8 encoding.
+			$phrase = mb_ereg_replace(" ", "", $phrase); // remove all spaces
+			
+			
+			$manacher_subpalindromes = self::manacher($phrase); // run Manacher's algorithm to find odd and even subpalindromes
+			$odd_subpalindromes = $manacher_subpalindromes[0];
+			$even_subpalindromes = $manacher_subpalindromes[1];
+			
+			$palindromes = [];
+			for ($i = 0; $i < mb_strlen($phrase); $i++) {
+				if ($odd_subpalindromes[$i] > 1) { // ignore palindromes which consits of one character
+					$palindromeLength = $odd_subpalindromes[$i]; // $odd_subpalindromes represents array of lengths of biggest palindromes, where index is the index of the character, which is the center of this palindrome
+					while ($palindromeLength > 1) { 
+						$palindromes[] = mb_substr($phrase, $i - $palindromeLength + 1, $palindromeLength*2 - 1);
+						$palindromeLength--;
+					}
+				}
+				
+				// same as previous with specific changes
+				if ($even_subpalindromes[$i] > 0) {
+					$palindromeLength = $even_subpalindromes[$i];
+					while ($palindromeLength > 0) {
+						$palindromes[] = mb_substr($phrase, $i - $palindromeLength, $palindromeLength*2);
+						$palindromeLength--;
+					}
+				}
+			}
+			return array_values(array_unique($palindromes));
+		};
+		
+		/*	Used for formatting correct success message
+			depending on the number of words found.
+		*/
+		$this->success = function ($n) {
+			$n_1 = $n % 100;
+		
+			if ($n_1 > 19) {
+				$n_1 = $n_1 % 10;
+			}
+			
+			$palindromeWordForm = "палиндром";
+			$foundWordForm = "Найдено";
+			
+			if ($n_1 >= 2 && $n_1 <= 4) {
+				$palindromeWordForm = "палиндрома";
+			} else if ($n_1 == 1) {
+				$palindromeWordForm = "палиндром";
+				$foundWordForm = "Найден";
+			} else {
+				$palindromeWordForm = "палиндромов";
+			}
+			
+			return $foundWordForm." ".strval($n)." ".$palindromeWordForm;
+		};
+		
+		$this->fail = "Не найдено ни одного палиндрома";
+	}
+	
+	
+	
+	/*	Manacher's algorithm. 
+		Time complexity: O(n)
+		Space complexity: O(1)
+	*/		
+	private static function manacher($str) {
+		$n = mb_strlen($str);
+		$odd = array_fill(0, $n, 0); // odd subpalindromes
+		$even = array_fill(0, $n, 0); // even subpalindromes
+		
+		/* Odd subpalindromes */
+		$l = 0; // left edge of current rightest palindrome
+		$r = -1; // right edge of current rightst palindrome
+		for ($i = 0; $i < $n; $i++) {	
+			$k = $i > $r ? 1 : min($odd[$l + $r - $i], $r - $i + 1); // k - known via previous steps palindrome center offset (guaranteed biggest palindrome with center in current position [i-k, i+k]
+			while ($i + $k < $n && $i - $k >= 0 && mb_substr($str, $i - $k, 1) == mb_substr($str, $i + $k, 1)) {
+				$k++; // increment offset if we are still between 0 and string length and mirrored elements are equal
+			}
+			$odd[$i] = $k; // here we know max palindrome size with center in current position (i)
+			if ($i + $k - 1 > $r) { // if right edge of current palindrome is righter than right edge of the previous rightest palindrome, renew l and r 
+				$l = $i - $k + 1;
+				$r = $i + $k - 1;
+			}
+		}
+		
+		/*	Even subpalindromes
+			a bit modified previous algorithm (for odd subpalindromes)
+		*/
+		$l = 0;
+		$r = -1;
+		for ($i = 0; $i < $n; $i++) {
+			$k = $i > $r ? 0 : min($even[$l + $r - $i + 1], $r - $i + 1);
+			while ($i + $k < $n && $i - $k - 1 >= 0 && mb_substr($str, $i + $k, 1) == mb_substr($str, $i - $k - 1, 1)) {
+				$k++;
+			}
+			$even[$i] = $k;
+			if ($i + $k - 1 > $r) {
+				$l = $i - $k;
+				$r = $i + $k - 1;
+			}
+		}
+		
+		return [$odd, $even];
+	}
+}</code>
+					</div>
+				</section>
+				<section class="sect">
+					<label for="showcontent_animal"><h3 id="animal" class="sect_title">Totem Animal</h3></label>
+					<input type="checkbox" id="showcontent_animal" class="visibility_switcher" />
+					<div class="sect_content animal">
+						<pre>           ;               ,           
+         ,;                 '.         
+        ;:                   :;        
+       ::                     ::       
+       ::                     ::       
+       ':                     :        
+        :.                    :        
+     ;' ::                   ::  '     
+    .'  ';                   ;'  '.    
+   ::    :;                 ;:    ::   
+   ;      :;.             ,;:     ::   
+   :;      :;:           ,;"      ::   
+   ::.      ':;  ..,.;  ;:'     ,.;:   
+    "'"...   '::,::::: ;:   .;.;""'    
+        '"""....;:::::;,;.;"""         
+    .:::.....'"':::::::'",...;::::;.   
+   ;:' '""'"";.,;:::::;.'""""""  ':;   
+  ::'         ;::;:::;::..         :;  
+ ::         ,;:::::::::::;:..       :: 
+ ;'     ,;;:;::::::::::::::;";..    ':.
+::     ;:"  ::::::"""'::::::  ":     ::
+ :.    ::   ::::::;  :::::::   :     ; 
+  ;    ::   :::::::  :::::::   :    ;  
+   '   ::   ::::::....:::::'  ,:   '   
+    '  ::    :::::::::::::"   ::       
+       ::     ':::::::::"'    ::       
+       ':       """""""'      ::       
+        ::                   ;:        
+        ':;                 ;:"        
+          ';              ,;'          
+            "'           '"            
+              '</pre>
+					</div>
+				</section>
+				<section class="sect">
+					<label for="showcontent_facts"><h3 id="facts" class="sect_title">Facts</h3></label>
+					<input type="checkbox" id="showcontent_facts" class="visibility_switcher" />
+					<div class="sect_content facts">
+						<article class="sect_article">
+							<header><h4 class="sect_article_title">Fun facts about this page</h4></header>
+							<ul>
+								<li>Additional info will be shown by clicking on the logo.</li>
+								<li>There's absolutely no JavaScript here.</li>
+								<li>It took about 2h to write this page.</li>
+								<li>Most of time was wasted on thinking about contents for this page.</li>
+							</ul>
+							<footer><time datetime="2021-09-19 23:00">19.09.2021</time></footer>
+						</article>
+						<article class="sect_article">
+							<header><h4 class="sect_article_title">Fun facts about spiders</h4></header>
+							<p>As spiders are my favorite animals, I'd like to write here some facts about them.</p>
+							<ol>
+								<li><b>Spiders</b> are nearsighted</li>
+								<li>All <b>spiders</b> produce silk</li>
+								<li>Jumping <b>spiders</b> can jump up to 50x their own length</li>
+								<li>Females can lay up to 3,000 eggs at one time</li>
+							</ol>
+							<footer><time datetime="2021-09-18 19:00">18.09.2021</time></footer>
+						</article>
+						<article class="sect_article">
+							<header><h4 class="sect_article_title">My favorite quotes</h4></header>
+							<figure class="quote">
+								<blockquote>
+									<q>You cannot love everyone; it is ridiculous to think you can.</q>
+								</blockquote>
+								<figcaption>
+								— Anton Szandor LaVey
+								</figcaption>
+							</figure>
+							<figure class="quote">
+								<blockquote>
+									<q>It’s too bad that stupidity isn’t painful. Ignorance is one thing, but our society thrives increasingly on stupidity. It depends on people going along with whatever they are told. The media promotes a cultivated stupidity as a posture that is not only acceptable but laudable.</q>
+								</blockquote>
+								<figcaption>
+								— Anton Szandor LaVey
+								</figcaption>
+							</figure>
+							<figure class="quote">
+								<blockquote>
+									<q>What really knocks me out is a book that, when you’re all done reading it, you wish the author that wrote it was a terrific friend of yours and you could call him up on the phone whenever you felt like it. That doesn’t happen much, though.</q>
+								</blockquote>
+								<figcaption>
+								— J. D. Salinger, <cite>The Catcher in the Rye</cite>
+								</figcaption>
+							</figure>
+							<footer><time datetime="2021-09-18 15:00">18.09.2021</time></footer>
+						</article>
+					</div>
+				</section>
+			</main>
+			<footer id="footer">
+				<h2 id="contacts">Contacts</h2>
+				<div class="footer_outer_links">
+					<a href="https://vk.com/crazy.doctor" target="_blank"><div class="contact vk"></div></a>
+					<a href="https://github.com/CrazyPhD" target="_blank"><div class="contact gh"></div></a>
+					<a href="tg://resolve?domain=CrazyBloodyDr"><div class="contact tg"></div></a>
+				</div>
+				<address class="footer_address">
+					&copy; <a href="https://crazydoctor.ru/" target="_blank">Karataev Oleg (CrazyDoctor)</a>
+				</address>
+			</footer>
+		</div>
+	</body>
 </html>
