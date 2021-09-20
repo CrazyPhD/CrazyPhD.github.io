@@ -39,6 +39,12 @@ a, a:visited {
 	font-size: 25px;
 }
 
+#header > .menu > .link:not(:last-child):after {
+	content: '•';
+	margin-left: 5px;
+	color: #FFF;
+}
+
 #header > .menu > .link:hover {
 	color: #660000;
 }
